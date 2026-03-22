@@ -1,7 +1,8 @@
 import { parseGithubUrl } from '../utils/githubParser.js';
 import { fetchRepoMetadata, fetchRepoTree, fetchFilesContent, fetchRepoContributors } from '../services/githubService.js';
 import { filterRelevantFiles } from '../utils/fileFilter.js';
-import { chunkText } from '../utils/chunker.js';
+import { Document } from "@langchain/core/documents";
+import { splitter } from "../config/textSplitter.js";
 
 export const analyzeRepo = async (req, res) => {
   try {
@@ -36,28 +37,21 @@ export const analyzeRepo = async (req, res) => {
     // Fetch contents of the relevant files
     const filesData = await fetchFilesContent(filesToFetch);
 
-    // Process files into chunks
-    const allChunks = [];
+    // Convert files into LangChain Documents
+    const docs = filesData
+      .filter(file => file.content && !file.error)
+      .map(file => new Document({
+        pageContent: String(file.content),
+        metadata: {
+          fileName: file.name,
+          path: file.path,
+          type: file.name.split('.').pop()
+        }
+      }));
 
-    filesData.forEach(file => {
-      // Skip if file has no content or had an error downloading
-      if (!file.content || file.error) return;
-
-      const chunks = chunkText(file.content, 500, 100);
-
-      chunks.forEach((chunk, index) => {
-        allChunks.push({
-          text: chunk,
-          metadata: {
-            fileName: file.name,
-            path: file.path,
-            chunkIndex: index
-          }
-        });
-      });
-    });
-
-    console.log("Total chunks generated:", allChunks.length);
+    // Split Documents
+    const splitDocs = await splitter.splitDocuments(docs);
+    console.log("Chunks created:", splitDocs.length);
 
     // Prepare response
     const responseData = {
@@ -73,7 +67,7 @@ export const analyzeRepo = async (req, res) => {
         defaultBranch: metadata.default_branch
       },
       files: filesData,
-      chunks: allChunks
+      chunks: splitDocs
     };
 
     return res.json(responseData);
