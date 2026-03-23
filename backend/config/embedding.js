@@ -1,4 +1,3 @@
-// src/config/embedding.js
 import { OpenAIEmbeddings } from "@langchain/openai";
 
 export const embeddings = new OpenAIEmbeddings({

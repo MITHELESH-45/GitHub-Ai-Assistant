@@ -1,20 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, FileCode2, Sparkles, AlertTriangle } from 'lucide-react';
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
-// Renders answer text with markdown-lite formatting (bold, bullets, newlines)
 function AnswerText({ text }) {
-  // Handle code blocks (split by ```)
   const codeBlockParts = text.split(/(```[\s\S]*?```)/g);
 
   return (
     <div className="space-y-4 text-sm md:text-base leading-relaxed text-textPrimary">
       {codeBlockParts.map((part, index) => {
-        // If it's a code block
         if (part.startsWith('```') && part.endsWith('```')) {
           const code = part.slice(3, -3).trim();
-          // Extract language if present (e.g. ```javascript)
           const firstNewline = code.indexOf('\n');
           const lang = firstNewline !== -1 ? code.slice(0, firstNewline) : '';
           const cleanCode = firstNewline !== -1 ? code.slice(firstNewline + 1) : code;
@@ -33,12 +29,10 @@ function AnswerText({ text }) {
           );
         }
 
-        // Handle regular text (with paragraphs and headers)
         const paragraphs = part.split(/\n{2,}/);
         return paragraphs.map((para, pi) => {
           if (!para.trim()) return null;
 
-          // Header 3: ### Header
           if (para.startsWith('### ')) {
             return (
               <h3 key={`${index}-${pi}`} className="text-lg font-bold text-white mt-6 mb-2 border-b border-border pb-1">
@@ -46,7 +40,6 @@ function AnswerText({ text }) {
               </h3>
             );
           }
-          // Header 2: ## Header
           if (para.startsWith('## ')) {
             return (
               <h2 key={`${index}-${pi}`} className="text-xl font-bold text-white mt-8 mb-3 border-b border-border pb-1">
@@ -59,7 +52,6 @@ function AnswerText({ text }) {
           return (
             <div key={`${index}-${pi}`} className="space-y-1.5">
               {lines.map((line, li) => {
-                // Bullet points
                 const isBullet = line.trim().startsWith('- ') || line.trim().startsWith('* ') || line.trim().startsWith('• ');
                 const cleanLine = isBullet ? line.trim().replace(/^[-*•]\s+/, '') : line;
 
@@ -108,7 +100,6 @@ export default function QA({ repoUrl }) {
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Welcome message
   useEffect(() => {
     setMessages([
       {
@@ -179,7 +170,6 @@ export default function QA({ repoUrl }) {
 
   return (
     <div className="flex flex-col h-[calc(100vh-160px)] md:h-[calc(100vh-180px)] animate-in slide-in-from-bottom-4 duration-500">
-      {/* Header */}
       <div className="pb-4 border-b border-border mb-4 shrink-0">
         <h2 className="text-2xl font-bold text-textPrimary flex items-center gap-2">
           <Sparkles className="w-6 h-6 text-accent" />
@@ -190,7 +180,6 @@ export default function QA({ repoUrl }) {
         </p>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto pr-1 space-y-6 mb-4 pb-4 custom-scrollbar">
         {messages.map((msg) => {
           if (msg.type === 'user') {
@@ -219,7 +208,6 @@ export default function QA({ repoUrl }) {
             );
           }
 
-          // AI message
           return (
             <div key={msg.id} className="flex gap-3 md:gap-4">
               <div className="w-8 h-8 rounded-full bg-[#238636] flex items-center justify-center shrink-0 shadow-md mt-1">
@@ -248,7 +236,6 @@ export default function QA({ repoUrl }) {
           );
         })}
 
-        {/* Typing indicator */}
         {isLoading && (
           <div className="flex gap-4">
             <div className="w-8 h-8 rounded-full bg-[#238636] flex items-center justify-center shrink-0">
@@ -265,7 +252,6 @@ export default function QA({ repoUrl }) {
         <div ref={bottomRef} className="h-1" />
       </div>
 
-      {/* Input bar */}
       <form onSubmit={handleSend} className="relative mt-auto shrink-0">
         <textarea
           ref={inputRef}

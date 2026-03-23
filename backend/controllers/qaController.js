@@ -1,9 +1,6 @@
-// controllers/qaController.js
 import OpenAI from "openai";
 import { getVectorStore } from "../config/vectorDB.js";
 
-// Lazy-init: dotenv runs in server.js before any request arrives,
-// so process.env.OPENAI_API_KEY is available by first call time.
 let _openai = null;
 const getOpenAI = () => {
   if (!_openai) {
@@ -12,10 +9,6 @@ const getOpenAI = () => {
   return _openai;
 };
 
-
-// ---------------------------------------------------------------------------
-// askQuestion  —  POST /api/repo/ask
-// ---------------------------------------------------------------------------
 export const askQuestion = async (req, res) => {
   try {
     const { question } = req.body;
@@ -30,7 +23,6 @@ export const askQuestion = async (req, res) => {
 
     const trimmedQuestion = question.trim();
 
-    // ----- 2. Retrieve vector store -------------------------------------------
     const vectorStore = getVectorStore();
 
     if (!vectorStore) {
@@ -41,9 +33,7 @@ export const askQuestion = async (req, res) => {
       });
     }
 
-    // ----- 3. Similarity search — top 5 chunks --------------------------------
     const results = await vectorStore.similaritySearch(trimmedQuestion, 5);
-    console.log(`[QA] Retrieved ${results.length} chunks for: "${trimmedQuestion}"`);
 
     if (results.length === 0) {
       return res.status(200).json({
@@ -54,7 +44,6 @@ export const askQuestion = async (req, res) => {
       });
     }
 
-    // ----- 4. Build context string from chunks --------------------------------
     const contextBlocks = results
       .map((doc, i) => {
         const filePath = doc.metadata?.path || doc.metadata?.fileName || "unknown";
@@ -62,7 +51,6 @@ export const askQuestion = async (req, res) => {
       })
       .join("\n\n");
 
-    // ----- 5. Deduplicate source paths ----------------------------------------
     const sources = [
       ...new Set(
         results
@@ -94,31 +82,26 @@ Question: ${trimmedQuestion}
 
 Please answer thoroughly and clearly, referencing the specific files and explaining the code in depth.`;
 
-    // ----- 7. Call OpenAI -------------------------------------------------------
     const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.3,   // lower temp = more factual, deterministic answers
-      max_tokens: 1500,   // generous limit for detailed answers
+      temperature: 0.3,
+      max_tokens: 1500,
     });
 
     const answer =
       completion.choices?.[0]?.message?.content?.trim() ||
       "Sorry, I was unable to generate an answer. Please try again.";
 
-    // ----- 8. Return response ---------------------------------------------------
     return res.status(200).json({
       success: true,
       answer,
       sources,
     });
   } catch (error) {
-    console.error("[QA] Error:", error.message);
-
-    // OpenAI quota / auth errors
     if (error?.status === 429) {
       return res.status(429).json({
         success: false,

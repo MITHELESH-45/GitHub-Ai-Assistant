@@ -20,13 +20,10 @@ export const analyzeRepo = async (req, res) => {
 
     const { owner, repo } = repoInfo;
 
-    // Fetch repository metadata
     const metadata = await fetchRepoMetadata(owner, repo);
 
-    // Fetch contributors count
     const contributors = await fetchRepoContributors(owner, repo);
 
-    // Fetch file tree recursively
     const tree = await fetchRepoTree(owner, repo, metadata.default_branch);
 
     // Filter out irrelevant files
@@ -35,10 +32,8 @@ export const analyzeRepo = async (req, res) => {
     // Limit to max 20 files
     const filesToFetch = relevantFiles.slice(0, 10);
 
-    // Fetch contents of the relevant files
     const filesData = await fetchFilesContent(filesToFetch);
 
-    // Convert files into LangChain Documents
     const docs = filesData
       .filter(file => file.content && !file.error)
       .map(file => new Document({
@@ -50,14 +45,9 @@ export const analyzeRepo = async (req, res) => {
         }
       }));
 
-    // Split Documents
     const splitDocs = await splitter.splitDocuments(docs);
-    //console.log("Chunks created:", splitDocs.length);
     const vectorStore = await storeDocuments(splitDocs);
 
-    console.log("Embeddings stored:", splitDocs.length);
-
-    // Prepare response
     const responseData = {
       success: true,
       metadata: {
@@ -76,8 +66,6 @@ export const analyzeRepo = async (req, res) => {
 
     return res.json(responseData);
   } catch (error) {
-    console.error('Error analyzing repo:', error.message);
-
     if (error.response) {
       if (error.response.status === 404) {
         return res.status(404).json({ success: false, error: 'Repository not found on GitHub.' });

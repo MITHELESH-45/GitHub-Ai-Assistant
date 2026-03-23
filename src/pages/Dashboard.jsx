@@ -24,7 +24,7 @@ export default function Dashboard({ repoUrl, onClear }) {
       setError(null);
 
       try {
-        const response = await fetch('http://localhost:5000/api/repo/analyze', {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/repo/analyze`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: repoUrl })
@@ -37,12 +37,6 @@ export default function Dashboard({ repoUrl, onClear }) {
         }
 
         if (result.success) {
-          console.log("=== GitHub AI Backend Response ===");
-          console.log("Metadata:", result.metadata);
-          console.log(`Successfully fetched ${result.files.length} relevant processing files.`);
-          console.log("Fetched Files Payload:", result.files);
-          console.log("==================================");
-          
           const backendMeta = result.metadata;
           const newAnalytics = {
             stars: backendMeta.stars,
@@ -51,7 +45,6 @@ export default function Dashboard({ repoUrl, onClear }) {
             contributors: backendMeta.contributors || backendMeta.watchers
           };
 
-          // Extract unique extensions from the files for the TechStack tab
           const uniqueExtensions = Array.from(new Set(result.files.map(f => f.name.split('.').pop())));
           const cleanTechStack = uniqueExtensions.map(ext => ext.toUpperCase() + ' File').filter(e => e !== 'MD File');
           
@@ -70,7 +63,6 @@ export default function Dashboard({ repoUrl, onClear }) {
           }
         }
       } catch (err) {
-        console.error("Analysis Failed:", err);
         if (isMounted) {
           setError(err.message || "Failed to analyze repository.");
         }

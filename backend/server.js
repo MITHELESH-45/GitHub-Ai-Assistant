@@ -12,7 +12,6 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Routes
 app.use('/api/repo', repoRoutes);
 app.use('/api/repo', qaRoutes);
 
@@ -22,4 +21,5 @@ app.get('/health', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  
 });
