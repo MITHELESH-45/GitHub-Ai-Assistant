@@ -3,6 +3,7 @@ import { fetchRepoMetadata, fetchRepoTree, fetchFilesContent, fetchRepoContribut
 import { filterRelevantFiles } from '../utils/fileFilter.js';
 import { Document } from "@langchain/core/documents";
 import { splitter } from "../config/textSplitter.js";
+import { storeDocuments } from "../config/vectorDB.js";
 
 export const analyzeRepo = async (req, res) => {
   try {
@@ -32,7 +33,7 @@ export const analyzeRepo = async (req, res) => {
     const relevantFiles = filterRelevantFiles(tree);
 
     // Limit to max 20 files
-    const filesToFetch = relevantFiles.slice(0, 20);
+    const filesToFetch = relevantFiles.slice(0, 10);
 
     // Fetch contents of the relevant files
     const filesData = await fetchFilesContent(filesToFetch);
@@ -51,7 +52,10 @@ export const analyzeRepo = async (req, res) => {
 
     // Split Documents
     const splitDocs = await splitter.splitDocuments(docs);
-    console.log("Chunks created:", splitDocs.length);
+    //console.log("Chunks created:", splitDocs.length);
+    const vectorStore = await storeDocuments(splitDocs);
+
+    console.log("Embeddings stored:", splitDocs.length);
 
     // Prepare response
     const responseData = {
