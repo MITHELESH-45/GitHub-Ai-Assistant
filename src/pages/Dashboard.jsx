@@ -121,8 +121,6 @@ export default function Dashboard({ repoUrl, onClear }) {
       case 'dashboard':
       case 'summary':
         return <Summary data={data.summary} repoUrl={repoUrl} />;
-      case 'qa':
-        return <QA initialData={data.qa} repoUrl={repoUrl} />;
       case 'tech':
         return <TechStack stack={data.techStack} />;
       case 'suggestions':
@@ -150,7 +148,15 @@ export default function Dashboard({ repoUrl, onClear }) {
 
         <main className="flex-1 p-4 md:p-8 overflow-y-auto w-full transition-all duration-300">
           <div className="max-w-4xl mx-auto">
-            {renderContent()}
+            {/* QA is always mounted to preserve chat history across tab switches.
+                Hidden via CSS when another tab is active. */}
+            {data && !isLoading && !error && (
+              <div className={activeTab === 'qa' ? '' : 'hidden'}>
+                <QA repoUrl={repoUrl} />
+              </div>
+            )}
+            {/* All other tabs render conditionally */}
+            {activeTab !== 'qa' && renderContent()}
           </div>
         </main>
       </div>

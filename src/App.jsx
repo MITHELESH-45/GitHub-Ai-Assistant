@@ -9,7 +9,12 @@ function App() {
     setCurrentRepo(url);
   };
 
-  const clearRepo = () => {
+  const clearRepo = async () => {
+    try {
+      await fetch('http://localhost:5000/api/repo/clear', { method: 'POST' });
+    } catch (error) {
+      console.error('Failed to clear repo on backend:', error);
+    }
     setCurrentRepo(null);
   };
 

@@ -90,3 +90,13 @@ export const analyzeRepo = async (req, res) => {
     return res.status(500).json({ success: false, error: 'Failed to analyze repository. ' + error.message });
   }
 };
+
+export const clearRepoData = async (req, res) => {
+  try {
+    const { clearVectorStore } = await import('../config/vectorDB.js');
+    clearVectorStore();
+    return res.json({ success: true, message: 'Vector store cleared' });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: 'Failed to clear vector store: ' + error.message });
+  }
+};
